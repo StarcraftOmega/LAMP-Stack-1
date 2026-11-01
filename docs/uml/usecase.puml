@@ -1,0 +1,60 @@
+@startuml
+title Colors Web Application - Use Case Diagram
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam actorStyle stickman
+
+actor User
+actor "MySQL Database\n(COP4331)" as Database
+
+rectangle "Colors Web Application" {
+  usecase "Log in" as Login
+  usecase "Validate credentials" as Validate
+  usecase "Persist login cookie" as SaveCookie
+  usecase "Search colors" as Search
+  usecase "Filter by current user" as Filter
+  usecase "Add color" as Add
+  usecase "Associate color with current user" as Associate
+  usecase "Log out" as Logout
+
+  usecase "Reject invalid credentials" as InvalidCredentials
+  usecase "Report no search matches" as NoMatches
+}
+
+User --> Login
+User --> Search
+User --> Add
+User --> Logout
+
+Login ..> Validate : <<include>>
+Login ..> SaveCookie : <<include>>
+Search ..> Filter : <<include>>
+Add ..> Associate : <<include>>
+
+InvalidCredentials ..> Login : <<extend>>
+NoMatches ..> Search : <<extend>>
+
+Login --> Database : credentials
+Search --> Database : retrieve colors
+Add --> Database : insert color
+
+note right of Login
+  POST /LAMPAPI/Login.php
+end note
+
+note right of Search
+  POST /LAMPAPI/SearchColors.php
+end note
+
+note right of Add
+  POST /LAMPAPI/AddColor.php
+end note
+
+note bottom of Logout
+  Clears client state, expires the cookie,
+  and returns to index.html.
+end note
+
+@enduml

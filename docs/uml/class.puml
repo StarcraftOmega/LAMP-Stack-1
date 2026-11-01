@@ -1,0 +1,155 @@
+@startuml
+title Colors Web Application - Class Diagram
+
+top to bottom direction
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam nodesep 35
+skinparam ranksep 45
+
+package "Browser client" {
+  class LoginPage <<HTML page>> {
+    + loginName : String
+    + loginPassword : String
+    + loginResult : String
+    + doLogin() : void
+  }
+
+  class ColorPage <<HTML page>> {
+    + searchText : String
+    + colorText : String
+    + colorSearchResult : String
+    + colorAddResult : String
+    + colorList : List<String>
+    + searchColor() : void
+    + addColor() : void
+    + doLogout() : void
+    + readCookie() : void
+  }
+
+  class SessionState <<JavaScript state>> {
+    - userId : Integer
+    - firstName : String
+    - lastName : String
+    + saveCookie() : void
+    + readCookie() : void
+    + clear() : void
+  }
+
+  class ApiClient <<JavaScript XHR>> {
+    - urlBase : String = "/LAMPAPI"
+    - extension : String = "php"
+    + postLogin(login, password) : LoginResponse
+    + postSearch(search, userId) : SearchResponse
+    + postAddColor(color, userId) : ApiResponse
+  }
+
+  class BrowserCookie <<browser storage>> {
+    + userId : Integer
+    + firstName : String
+    + lastName : String
+    + expires : Date
+  }
+}
+
+package "JSON request and response shapes" {
+  class LoginRequest <<request>> {
+    + login : String
+    + password : String
+  }
+
+  class LoginResponse <<response>> {
+    + id : Integer
+    + firstName : String
+    + lastName : String
+    + error : String
+  }
+
+  class SearchRequest <<request>> {
+    + search : String
+    + userId : Integer
+  }
+
+  class SearchResponse <<response>> {
+    + results : List<String>
+    + error : String
+  }
+
+  class AddColorRequest <<request>> {
+    + color : String
+    + userId : Integer
+  }
+
+  class ApiResponse <<response>> {
+    + error : String
+  }
+}
+
+package "PHP API (LAMPAPI)" {
+  class LoginEndpoint <<PHP endpoint>> {
+    + handle(request : LoginRequest) : LoginResponse
+  }
+
+  class SearchColorsEndpoint <<PHP endpoint>> {
+    + handle(request : SearchRequest) : SearchResponse
+  }
+
+  class AddColorEndpoint <<PHP endpoint>> {
+    + handle(request : AddColorRequest) : ApiResponse
+  }
+}
+
+package "Persistence (MySQL: COP4331)" {
+  class DatabaseConnection <<mysqli access>> {
+    - databaseName : String = "COP4331"
+    + findUser(login, password) : User
+    + findColors(search, userId) : List<Color>
+    + insertColor(color : Color) : void
+  }
+
+  class User <<domain entity>> {
+    + id : Integer
+    + login : String
+    + password : String
+    + firstName : String
+    + lastName : String
+  }
+
+  class Color <<domain entity>> {
+    + name : String
+    + userId : Integer
+  }
+}
+
+LoginPage --> ApiClient : submits login
+ColorPage --> SessionState : reads identity
+ColorPage --> ApiClient : searches/adds colors
+ColorPage --> SessionState : logs out
+SessionState ..> BrowserCookie : persists identity
+
+ApiClient ..> LoginRequest
+ApiClient ..> SearchRequest
+ApiClient ..> AddColorRequest
+ApiClient --> LoginEndpoint : POST
+ApiClient --> SearchColorsEndpoint : POST
+ApiClient --> AddColorEndpoint : POST
+
+LoginEndpoint ..> LoginRequest
+LoginEndpoint ..> LoginResponse
+SearchColorsEndpoint ..> SearchRequest
+SearchColorsEndpoint ..> SearchResponse
+AddColorEndpoint ..> AddColorRequest
+AddColorEndpoint ..> ApiResponse
+
+LoginEndpoint --> DatabaseConnection
+SearchColorsEndpoint --> DatabaseConnection
+AddColorEndpoint --> DatabaseConnection
+DatabaseConnection --> User
+DatabaseConnection --> Color
+
+' Colors.UserId references Users.ID; no cascade ownership is implemented.
+User "1" -- "0..*" Color : userId (FK)
+
+@enduml

@@ -1,0 +1,101 @@
+@startuml
+title Colors Application User Session
+
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #F8FAFC
+  BorderColor #1F3B64
+  DiamondBackgroundColor #FFF9E6
+  DiamondBorderColor #1F3B64
+  StartColor #111111
+  EndColor #111111
+}
+
+start
+
+partition "Login" {
+  :[User] Open index.html;
+  :[User] Enter login and password;
+
+  repeat
+    :[Browser] Clear previous login result;
+    :[Browser] Build {login, password} JSON;
+    :[Browser] POST /LAMPAPI/Login.php;
+    :[PHP] Decode request and prepare query;
+    :[MySQL] Query Users by Login and Password;
+
+    if (Database connection/query successful?) then (yes)
+      if (Matching user found?) then (yes)
+        :[PHP] Return {id, firstName, lastName, error};
+        :[Browser] Save identity cookie for 20 minutes;
+        :[Browser] Navigate to color.html;
+        break
+      else (no)
+        :[PHP] Return id = 0 and error;
+        :[Browser] Show invalid credentials;
+      endif
+    else (no)
+      :[PHP] Return error JSON;
+      :[Browser] Show login error;
+    endif
+    :[User] Retry login;
+  repeat while (Login succeeded?) is (no)
+}
+
+partition "Session check" {
+  :[Browser] Read cookie on color.html load;
+
+  if (Valid userId present?) then (yes)
+    :[Browser] Show color-management UI;
+  else (no)
+    :[Browser] Redirect to index.html;
+    stop
+  endif
+}
+
+partition "Authenticated action" {
+  repeat
+    :[User] Choose Search, Add, or Log out;
+
+    if (Search?) then (yes)
+      :[User] Enter color fragment and click Search Color;
+      :[Browser] Build {search, userId} JSON;
+      :[Browser] POST /LAMPAPI/SearchColors.php;
+      :[PHP] Build partial-name LIKE query;
+      :[MySQL] Find Colors matching name and userId;
+
+      if (Matches found?) then (yes)
+        :[PHP] Return {results, error} JSON;
+        :[Browser] Render matching color names;
+      else (no)
+        :[PHP] Return an error response;
+        :[Browser] Show no-records feedback;
+      endif
+
+    elseif (Add?) then (yes)
+      :[User] Enter color name and click Add Color;
+      :[Browser] Build {color, userId} JSON;
+      :[Browser] POST /LAMPAPI/AddColor.php;
+      :[PHP] Prepare INSERT statement;
+      :[MySQL] Insert UserId and Name into Colors;
+
+      if (Database operation successful?) then (yes)
+        :[Browser] Show Color has been added;
+      else (no)
+        :[PHP] Return an error response;
+        :[Browser] Show add-color error;
+      endif
+
+    else (Log out)
+      break
+    endif
+  repeat while (Continue session?) is (yes)
+
+  partition "Log out" {
+    :[Browser] Clear userId, firstName, and lastName;
+    :[Browser] Expire cookie and navigate to index.html;
+  }
+}
+
+stop
+@enduml
