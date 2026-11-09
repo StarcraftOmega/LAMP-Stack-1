@@ -17,11 +17,11 @@
  * See http://pajhome.org.uk/crypt/md5 for more info.
  */
 
-/* global define */
+/* global define, module */
 
 /* eslint-disable strict */
 
-;(function($) {
+(function($) {
   'use strict'
 
   /**
