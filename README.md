@@ -1,35 +1,107 @@
-# LAMP-Stack
+# COLORS LAMP Stack Application
 
-Description:
+This project is a small COLORS web application with a vanilla HTML, CSS, and JavaScript frontend and a PHP/MySQL backend. It supports login, adding colors, and searching saved colors.
 
-This COLORS web application allows for simple use such as login, adding colors, and searching colors. 
+## Technologies
 
-Technologies used:
-    Visual studio
-    WinSCP
-    Linux
-    MySQL
-    PHP
-    LAMP
-    Apache HTTP
-    Git
-    Gemini
+- HTML and CSS
+- Vanilla JavaScript
+- PHP
+- MySQL
+- Apache or the PHP built-in development server
+- Node.js and npm for linting and automated tests
+- ESLint, HTMLHint, Stylelint, and Jest
+- GitHub Actions
 
-High-Level setup instructions:
-    Setting Up a server:
-    Use a service like digitalocean.com and create a LAMP on Ubuntu 20.04 that has at least 1GB CPU, 25GB  SSD, and 1000GB transfer.  
+## Project Structure
 
-    OPTIONAL- set up a domain name as well.
+- `index.html` - Login page
+- `color.html` - Add and search color page
+- `js/code.js` - Frontend application logic
+- `LAMPAPI/` - PHP API endpoints
+- `database.sql` - Database schema and test seed data
+- `tests/unit.test.js` - Frontend unit tests
+- `tests/integration.test.js` - Live PHP API integration tests
+- `.github/workflows/lint.yml` - Lint and test workflow
 
-    Install PuTTY on the server.
+## Local Setup
 
-    Create the MySQL database used by the COLORS app and populate it.
+### 1. Configure MySQL
 
-    Upload the API PHP files and place them in LAMPAPI.
-    
-    Upload css, images, js directories, color.html, and index.html
+Import the included schema:
 
-How to run and access the application:
-Once the server is running, to set it up you can just SSH into it using “ssh root@______” domain or IP address then when prompted, enter the password.
-To test the application, paste your setup domain or server IP address to test the pages out.
+```sql
+mysql -u root -p < database.sql
+```
+
+The schema creates the `COP4331` database, `Users` and `Colors` tables, and a test user:
+
+- Login: `testuser`
+- Password: `testpass`
+
+### 2. Configure PHP Database Credentials
+
+The PHP endpoints use these defaults for local development:
+
+- Host: `localhost`
+- Port: `3306`
+- Database: `COP4331`
+- User: `TheBeast`
+- Password: `WeLoveCOP4331`
+
+They may be overridden with `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` environment variables.
+
+### 3. Start the Application
+
+With PHP and MySQL available, run this command from the project directory:
+
+```powershell
+php -S 127.0.0.1:8000 -t .
+```
+
+Open `http://127.0.0.1:8000/index.html`.
+
+## Install Test and Lint Tools
+
+Node.js is used only for development tools and testing. It does not replace the PHP/MySQL application server.
+
+```powershell
+npm ci
+```
+
+## Run Automated Checks
+
+Run each lint check:
+
+```powershell
+npm run lint:html
+npm run lint:css
+npm run lint:js
+```
+
+Run the frontend unit tests:
+
+```powershell
+npm test -- --runTestsByPath tests/unit.test.js
+```
+
+Run the complete Jest suite while the PHP server and MySQL database are running:
+
+```powershell
+npm test
+```
+
+The API integration tests send requests to `http://127.0.0.1:8000` by default. Set `API_BASE_URL` to use a different server URL.
+
+## GitHub Actions CI
+
+The workflow in `.github/workflows/lint.yml` runs on every `push` and `pull_request`. It:
+
+1. Starts a MySQL 8.0 service container.
+2. Initializes the database using `database.sql`.
+3. Installs PHP with the mysqli extension.
+4. Starts the PHP built-in server on `127.0.0.1:8000`.
+5. Installs Node.js dependencies with `npm ci`.
+6. Runs HTMLHint, Stylelint, and ESLint.
+7. Runs the complete Jest test suite.
 

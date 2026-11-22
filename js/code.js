@@ -1,4 +1,5 @@
 /* exported doLogin, readCookie, doLogout, addColor, searchColor */
+/* eslint-disable no-unused-vars */
 
 const urlBase = '/LAMPAPI';
 const extension = 'php';
@@ -6,6 +7,51 @@ const extension = 'php';
 let userId = 0;
 let firstName = "";
 let lastName = "";
+
+function normalizeColor(value)
+{
+	if (typeof value !== "string")
+	{
+		return "";
+	}
+
+	return value.trim().replace(/\s+/g, " ");
+}
+
+function isValidColor(value)
+{
+	const normalized = normalizeColor(value);
+	return normalized.length > 0 &&
+		normalized.length <= 50 &&
+		/^[A-Za-z0-9 _#-]+$/.test(normalized);
+}
+
+function buildLoginPayload(login, password)
+{
+	return JSON.stringify({
+		login: typeof login === "string" ? login.trim() : "",
+		password: typeof password === "string" ? password : ""
+	});
+}
+
+function buildAddColorPayload(color, currentUserId)
+{
+	const normalized = normalizeColor(color);
+	if (!isValidColor(normalized) || !Number.isInteger(Number(currentUserId)))
+	{
+		return null;
+	}
+
+	return JSON.stringify({color: normalized, userId: Number(currentUserId)});
+}
+
+function buildSearchPayload(search, currentUserId)
+{
+	return JSON.stringify({
+		search: typeof search === "string" ? search.trim() : "",
+		userId: Number(currentUserId)
+	});
+}
 
 function doLogin()
 {
@@ -184,4 +230,15 @@ function searchColor()
 		document.getElementById("color-search-result").innerHTML = err.message;
 	}
 	
+}
+
+if (typeof module !== "undefined" && module.exports)
+{
+	module.exports = {
+		normalizeColor,
+		isValidColor,
+		buildLoginPayload,
+		buildAddColorPayload,
+		buildSearchPayload
+	};
 }

@@ -5,7 +5,13 @@
 	$searchResults = "";
 	$searchCount = 0;
 
-	$conn = new mysqli("localhost", "TheBeast", "WeLoveCOP4331", "COP4331");
+	$dbHost = getenv("DB_HOST") ?: "localhost";
+	$dbUser = getenv("DB_USER") ?: "TheBeast";
+	$dbPassword = getenv("DB_PASSWORD") ?: "WeLoveCOP4331";
+	$dbName = getenv("DB_NAME") ?: "COP4331";
+	$dbPort = getenv("DB_PORT") ?: 3306;
+
+	$conn = new mysqli($dbHost, $dbUser, $dbPassword, $dbName, (int)$dbPort);
 	if ($conn->connect_error) 
 	{
 		returnWithError( $conn->connect_error );

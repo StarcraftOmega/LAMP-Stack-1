@@ -1,12 +1,27 @@
-name: Lint
+name: CI
 
 on:
   push:
   pull_request:
 
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: COP4331
+          MYSQL_USER: TheBeast
+          MYSQL_PASSWORD: WeLoveCOP4331
+          MYSQL_ROOT_PASSWORD: rootpassword
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -prootpassword"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -14,11 +29,39 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+      - name: Initialize MySQL schema
+        run: mysql -h 127.0.0.1 -uroot -prootpassword < database.sql
+      - name: Start PHP server
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: COP4331
+          DB_USER: TheBeast
+          DB_PASSWORD: WeLoveCOP4331
+        run: |
+          php -S 127.0.0.1:8000 -t . &
+          for i in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:8000/index.html >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1
       - name: Lint HTML
         run: npm run lint:html
       - name: Lint CSS
         run: npm run lint:css
       - name: Lint JavaScript
         run: npm run lint:js
+      - name: Run Jest tests
+        env:
+          API_BASE_URL: http://127.0.0.1:8000
+        run: npm test -- --runInBand
